@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>flexRM Mengenerstellung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f7fb;
+      padding: 2rem;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: 600;
+    }
+
+    select, input, button {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.3rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #0066cc;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 1.5rem;
+    }
+
+    button:hover {
+      background-color: #004999;
+    }
+
+    .note {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.5rem;
+      font-style: italic;
+    }
+
+    #output, #unitHint {
+      margin-top: 2rem;
+      background: #fff8c4;
+      border: 2px solid #f2d024;
+      padding: 1rem;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📊 Mengenerstellung für Berechnungen</h2>
+
+    <label for="param">Parameter:</label>
+    <select id="param">
+      <option value="{HeatConsumption}">Wärmeverbrauch</option>
+      <option value="{ConnectionPower}">Anschlussleistung</option>
+      <option value="{HeatDeliveryPower}">Wärmelieferleistung</option>
+      <option value="{Days}">Tage</option>
+      <option value="{Months}">Monat</option>
+      <option value="{Years}">Jahr</option>
+    </select>
+
+    <hr style="margin-top:2rem;"><label for="operator">➕ Mathematische Funktion (optional):</label>
+    <select id="operator">
+      <option value="">(keine)</option>
+      <option value="+">+</option>
+      <option value="-">-</option>
+      <option value="*">*</option>
+      <option value="/">/</option>
+    </select>
+
+    <label for="value">💬 Mengenwert (optional):</label>
+    <input type="text" id="value" placeholder="z. B. 10,5">
+
+    <hr style="margin-top:2rem;"><label for="unit">📏 Einheit:</label>
+    <select id="unit">
+      <option value="kW">kW</option>
+      <option value="kWh">kWh</option>
+      <option value="MWh">MWh</option>
+      <option value="Tag">Tag</option>
+      <option value="Monat">Monat</option>
+      <option value="Jahr">Jahr</option>
+    </select>
+
+    <label for="unitAmount">📌 Einheitsmenge (optional):</label>
+    <select id="unitAmount">
+      <option value="">(Keine)</option>
+      <option value="Monat">Monat</option>
+      <option value="Jahr">Jahr</option>
+    </select>
+
+    <hr style="margin-top:2rem;"><button onclick="generateOutput()">🔧 Berechnungsformel erstellen</button>
+<button id="copyButton" onclick="copyOutput()" style="display:none; margin-top:0.5rem; background-color:#f2d024; color:#000;">📋 In Zwischenablage kopieren</button>
+<button onclick="resetForm()" style="margin-top:1rem; background:#ccc; color:#000;">🔄 Zurücksetzen</button>
+
+    <div id="unitHint" style="display:none;"></div>
+    <div id="output">
+    <hr style="margin-top:2rem;">
+    <h3 style="text-align:center;">🧮 Beispielrechner</h3>
+    <label for="paramValue">Wert für gewählten Parameter:</label>
+    <input type="text" id="paramValue" placeholder="z. B. 12345 (kWh)">
+
+    <label for="pricePerUnit">Preis je Einheit (z. B. €/kWh):</label>
+    <input type="text" id="pricePerUnit" placeholder="z. B. 0,12">
+
+    <button onclick="calculateExample()">📈 Berechnen</button>
+
+    <div id="calcResult" style="margin-top:2rem; background:#e6f7ff; border:2px solid #99d3f5; padding:1rem; border-radius:10px; font-size:1.1rem;"></div>
+    
+    </div>
+  </div>
+
+  <!-- Separate calculator block -->
+  <div class="container" style="margin-top: 2rem;">
+    <h3 style="text-align:center;">🧮 Beispielrechner</h3>
+    <label for="paramValue">Wert für gewählten Parameter:</label>
+    <input type="text" id="paramValue" placeholder="z. B. 12345 (kWh)">
+
+    <label for="pricePerUnit">Preis je Einheit (z. B. €/kWh):</label>
+    <input type="text" id="pricePerUnit" placeholder="z. B. 0,12">
+
+    <button onclick="calculateExample()">📈 Berechnen</button>
+
+    <div id="calcResult" style="margin-top:2rem; background:#e6f7ff; border:2px solid #99d3f5; padding:1rem; border-radius:10px; font-size:1.1rem;"></div>
+  </div>
+
+  <script>
+    function parseExpression(expression, value) {
+      return expression.replace(/\{[^}]+\}/g, value);
+    }
+
+    function calculateExample() {
+      const expr = document.getElementById('output').textContent;
+      const valRaw = document.getElementById('paramValue').value.replace(',', '.');
+      const priceRaw = document.getElementById('pricePerUnit').value.replace(',', '.');
+      const unitAmount = document.getElementById('unitAmount').value;
+
+      const resultEl = document.getElementById('calcResult');
+
+      if (expr.trim() === '') {
+        resultEl.textContent = 'Bitte zuerst einen String generieren.';
+        return;
+      }
+      if (valRaw.trim() === '' || isNaN(valRaw)) {
+        resultEl.textContent = 'Bitte einen gültigen Wert für den Parameter eingeben.';
+        return;
+      }
+      if (priceRaw.trim() === '' || isNaN(priceRaw)) {
+        resultEl.textContent = 'Bitte einen gültigen Preis pro Einheit angeben.';
+        return;
+      }
+
+      const val = parseFloat(valRaw);
+      const price = parseFloat(priceRaw);
+
+      const calcExpr = parseExpression(expr, val);
+      let result = 0;
+
+      try {
+        result = eval(calcExpr);
+      } catch (e) {
+        resultEl.textContent = 'Fehler bei der Berechnung.';
+        return;
+      }
+
+      let total = result * price;
+      let explanation = '';
+
+      if (unitAmount === 'Monat') {
+        total *= 12;
+        explanation = '💡 Hochrechnung auf Jahr: mit 12 multipliziert, da Einheitsmenge "Monat" gewählt wurde.';
+      } else if (unitAmount === 'Jahr') {
+        explanation = 'ℹ️ Jahreswert wird direkt verwendet (Multiplikator 1 bei "Jahr").';
+      }
+
+      resultEl.innerHTML = `
+        <strong>Rechenweg:</strong><br>
+        ${expr.replace(/\{[^}]+\}/g, val)} = ${result.toFixed(2)}<br><br>
+        <strong>Berechneter Verbrauchswert:</strong> ${result.toFixed(2)}<br>
+        <strong>Preis pro Einheit:</strong> ${price.toFixed(4)}<br>
+        <strong>Gesamtkosten:</strong> ${total.toFixed(2)}<br><br>
+        ${explanation}
+      `;
+    }
+
+    function generateOutput() {
+      const param = document.getElementById('param').value;
+      const operator = document.getElementById('operator').value;
+      let value = document.getElementById('value').value.replace(',', '.');
+      const unitAmount = document.getElementById('unitAmount').value;
+
+      const outputEl = document.getElementById('output');
+      const hintEl = document.getElementById('unitHint');
+
+      outputEl.textContent = '';
+      hintEl.textContent = '';
+      hintEl.style.display = 'none';
+
+      let resultText = param;
+      if (operator && value.trim() !== '' && !isNaN(value)) {
+        resultText = `${param} ${operator} ${value}`;
+      }
+      outputEl.textContent = resultText;
+      if (resultText.trim() !== "") {
+        document.getElementById('copyButton').style.display = 'block';
+      } else {
+        document.getElementById('copyButton').style.display = 'none';
+      }
+
+      if (unitAmount === 'Monat') {
+        hintEl.style.display = 'block';
+        hintEl.textContent = '🟨 Folgenden Text bitte in Einheitsmenge kopieren: Monat, {Months}';
+      } else if (unitAmount === 'Jahr') {
+        hintEl.style.display = 'block';
+        hintEl.textContent = '🟨 Folgenden Text bitte in Einheitsmenge kopieren: Jahr, {Years}';
+      }
+    }
+  
+    function resetForm() {
+      document.getElementById('param').value = '{HeatConsumption}';
+      document.getElementById('operator').value = '';
+      document.getElementById('value').value = '';
+      document.getElementById('unit').value = 'kW';
+      document.getElementById('unitAmount').value = '';
+      document.getElementById('output').textContent = '';
+      document.getElementById('unitHint').style.display = 'none';
+      document.getElementById('unitHint').textContent = '';
+      document.getElementById('paramValue').value = '';
+      document.getElementById('pricePerUnit').value = '';
+      document.getElementById('calcResult').textContent = '';
+    }
+    
+    function copyOutput() {
+      const outputText = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(outputText).then(() => {
+        const copyBtn = document.getElementById('copyButton');
+        copyBtn.textContent = "✅ Kopiert!";
+        copyBtn.style.backgroundColor = "#4CAF50";
+        copyBtn.style.color = "#fff";
+        setTimeout(() => {
+          copyBtn.textContent = "📋 In Zwischenablage kopieren";
+          copyBtn.style.backgroundColor = "#f2d024";
+          copyBtn.style.color = "#000";
+        }, 2000);
+      });
+    }
+</script>
+
+</body>
+</html>
