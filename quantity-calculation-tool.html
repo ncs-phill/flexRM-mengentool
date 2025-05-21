@@ -120,17 +120,6 @@
 
     <div id="unitHint" style="display:none;"></div>
     <div id="output">
-    <hr style="margin-top:2rem;">
-    <h3 style="text-align:center;">🧮 Beispielrechner</h3>
-    <label for="paramValue">Wert für gewählten Parameter:</label>
-    <input type="text" id="paramValue" placeholder="z. B. 12345 (kWh)">
-
-    <label for="pricePerUnit">Preis je Einheit (z. B. €/kWh):</label>
-    <input type="text" id="pricePerUnit" placeholder="z. B. 0,12">
-
-    <button onclick="calculateExample()">📈 Berechnen</button>
-
-    <div id="calcResult" style="margin-top:2rem; background:#e6f7ff; border:2px solid #99d3f5; padding:1rem; border-radius:10px; font-size:1.1rem;"></div>
     
     </div>
   </div>
@@ -154,59 +143,61 @@
       return expression.replace(/\{[^}]+\}/g, value);
     }
 
-    function calculateExample() {
-      const expr = document.getElementById('output').textContent;
-      const valRaw = document.getElementById('paramValue').value.replace(',', '.');
-      const priceRaw = document.getElementById('pricePerUnit').value.replace(',', '.');
-      const unitAmount = document.getElementById('unitAmount').value;
+function calculateExample() {
+  const expr = document.getElementById('output').textContent.trim();
+  const valRaw = document.getElementById('paramValue').value.replace(',', '.');
+  const priceRaw = document.getElementById('pricePerUnit').value.replace(',', '.');
+  const unitAmount = document.getElementById('unitAmount').value;
+  const resultEl = document.getElementById('calcResult');
 
-      const resultEl = document.getElementById('calcResult');
+  // Neue spezifische Fehlermeldung für nicht erstellte Formel
+  if (expr === '' || expr.includes('Berechnungsformel erstellen')) {
+    resultEl.innerHTML = '<span style="color:red;">⚠️ Bitte erstellen Sie zuerst eine gültige Berechnungsformel mit dem Button „🔧 Berechnungsformel erstellen“.</span>';
+    return;
+  }
 
-      if (expr.trim() === '') {
-        resultEl.textContent = 'Bitte zuerst einen String generieren.';
-        return;
-      }
-      if (valRaw.trim() === '' || isNaN(valRaw)) {
-        resultEl.textContent = 'Bitte einen gültigen Wert für den Parameter eingeben.';
-        return;
-      }
-      if (priceRaw.trim() === '' || isNaN(priceRaw)) {
-        resultEl.textContent = 'Bitte einen gültigen Preis pro Einheit angeben.';
-        return;
-      }
+  if (valRaw.trim() === '' || isNaN(valRaw)) {
+    resultEl.textContent = 'Bitte einen gültigen Wert für den Parameter eingeben.';
+    return;
+  }
 
-      const val = parseFloat(valRaw);
-      const price = parseFloat(priceRaw);
+  if (priceRaw.trim() === '' || isNaN(priceRaw)) {
+    resultEl.textContent = 'Bitte einen gültigen Preis pro Einheit angeben.';
+    return;
+  }
 
-      const calcExpr = parseExpression(expr, val);
-      let result = 0;
+  const val = parseFloat(valRaw);
+  const price = parseFloat(priceRaw);
+  const calcExpr = parseExpression(expr, val);
+  let result = 0;
 
-      try {
-        result = eval(calcExpr);
-      } catch (e) {
-        resultEl.textContent = 'Fehler bei der Berechnung.';
-        return;
-      }
+  try {
+    result = eval(calcExpr);
+  } catch (e) {
+    resultEl.textContent = 'Fehler bei der Berechnung.';
+    return;
+  }
 
-      let total = result * price;
-      let explanation = '';
+  let total = result * price;
+  let explanation = '';
 
-      if (unitAmount === 'Monat') {
-        total *= 12;
-        explanation = '💡 Hochrechnung auf Jahr: mit 12 multipliziert, da Einheitsmenge "Monat" gewählt wurde.';
-      } else if (unitAmount === 'Jahr') {
-        explanation = 'ℹ️ Jahreswert wird direkt verwendet (Multiplikator 1 bei "Jahr").';
-      }
+  if (unitAmount === 'Monat') {
+    total *= 12;
+    explanation = '💡 Hochrechnung auf Jahr: mit 12 multipliziert, da Einheitsmenge "Monat" gewählt wurde.';
+  } else if (unitAmount === 'Jahr') {
+    explanation = 'ℹ️ Jahreswert wird direkt verwendet (Multiplikator 1 bei "Jahr").';
+  }
 
-      resultEl.innerHTML = `
-        <strong>Rechenweg für Mengenangabe:</strong><br>
-        ${expr.replace(/\{[^}]+\}/g, val)} = ${result.toFixed(2)}<br><br>
-        <strong>Berechneter Verbrauchswert:</strong> ${result.toFixed(2)}<br>
-        <strong>Preis pro Einheit:</strong> ${price.toFixed(4)}<br>
-        <strong>Gesamtkosten:</strong> ${total.toFixed(2)}<br><br>
-        ${explanation}
-      `;
-    }
+  resultEl.innerHTML = `
+    <strong>Rechenweg für Mengenangabe:</strong><br>
+    ${expr.replace(/\{[^}]+\}/g, val)} = ${result.toFixed(2)}<br><br>
+    <strong>Berechneter Verbrauchswert:</strong> ${result.toFixed(2)}<br>
+    <strong>Preis pro Einheit:</strong> ${price.toFixed(4)}<br>
+    <strong>Gesamtkosten:</strong> ${total.toFixed(2)}<br><br>
+    ${explanation}
+  `;
+}
+
 
     function generateOutput() {
       const param = document.getElementById('param').value;
